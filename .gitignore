@@ -1,0 +1,44 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift / SPM build artifacts
+/.build
+/Packages
+.swiftpm/
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xccheckout
+*.moved-aside
+*.xcworkspace
+!default.xcworkspace
+*.hmap
+
+# IDE
+.idea/
+*.swp
+
+# Compiled app bundle (not source)
+TokenPet.app/
+
+# Secrets / local credentials (never commit!)
+*.pem
+*.key
+*.p12
+*.cer
+.netrc
+oauth_creds.json
+
+# Internal dev docs (not for public repo)
+GEMINI.md
+docs/development/
+docs/assets/*.jpg
+docs/assets/*.png
+
+
+# Local credentials — never commit
+Sources/TokenPet/GeminiCredentials.swift
+
