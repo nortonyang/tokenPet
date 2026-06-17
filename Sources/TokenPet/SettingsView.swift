@@ -260,7 +260,7 @@ public struct SettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             // ── Custom Agent Tab Bar with Company Logos ──
             HStack(spacing: 8) {
-                AgentTabButton(title: "反重力", brand: .gemini, isSelected: selectedAgentTab == 0) {
+                AgentTabButton(title: "反重力", brand: .antigravity, isSelected: selectedAgentTab == 0) {
                     selectedAgentTab = 0
                 }
                 AgentTabButton(title: "Codex", brand: .codex, isSelected: selectedAgentTab == 1) {
@@ -295,35 +295,15 @@ public struct SettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 
                 // ── 标题行 ──
-                HStack(spacing: 8) {
-                    AgentLogoView(brand: .gemini, size: 28)
-                    Text("反重力 额度")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Theme.textMain)
-                    
-                    StatusCapsule(text: geminiStatusText, color: geminiStatusColor)
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("数据源: \(quotaManager.geminiDataSource)")
-                            .font(.system(size: 9))
-                            .foregroundColor(Theme.textSecondary)
-                        
-                        HStack(spacing: 4) {
-                            Button(action: { coordinator.refresh() }) {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(Theme.textSecondary)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            Text("更新于 \(timeFormatter.string(from: quotaManager.lastUpdated))")
-                                .font(.system(size: 9))
-                                .foregroundColor(Theme.textSecondary)
-                        }
-                    }
-                }
+                AgentQuotaHeader(
+                    brand: .antigravity,
+                    title: "反重力 额度",
+                    statusText: geminiStatusText,
+                    statusColor: geminiStatusColor,
+                    primaryMeta: "数据源: \(quotaManager.geminiDataSource)",
+                    secondaryMeta: "更新于 \(timeFormatter.string(from: quotaManager.lastUpdated))",
+                    refreshAction: { coordinator.refresh() }
+                )
                 .padding(.bottom, 12)
                 
                 // ── /usage 模型组额度 ──
@@ -351,12 +331,13 @@ public struct SettingsView: View {
                 
                 // ── 调用量统计（4格网格）──
                 HStack(spacing: 8) {
-                    StatMiniCell(label: "5h 调用", value: "\(coordinator.usageData.antigravityStats.calls5h)")
-                    StatMiniCell(label: "24h 调用", value: "\(coordinator.usageData.antigravityStats.calls24h)")
-                    StatMiniCell(label: "7天 调用", value: "\(coordinator.usageData.antigravityStats.calls7d)")
-                    StatMiniCell(
-                        label: "7天 429",
+                    AgentMetricCell(title: "5h 调用", value: "\(coordinator.usageData.antigravityStats.calls5h)", subtitle: "最近 5 小时")
+                    AgentMetricCell(title: "24h 调用", value: "\(coordinator.usageData.antigravityStats.calls24h)", subtitle: "最近 24 小时")
+                    AgentMetricCell(title: "7天 调用", value: "\(coordinator.usageData.antigravityStats.calls7d)", subtitle: "最近 7 天")
+                    AgentMetricCell(
+                        title: "7天 429",
                         value: "\(coordinator.usageData.antigravityStats.errorCount7d)",
+                        subtitle: "限流累计",
                         valueColor: coordinator.usageData.antigravityStats.errorCount7d > 0 ? Theme.red : Theme.textSecondary
                     )
                 }
@@ -425,20 +406,15 @@ public struct SettingsView: View {
         CustomCard(title: "") {
             VStack(alignment: .leading, spacing: 12) {
                 // Header
-                HStack(spacing: 8) {
-                    AgentLogoView(brand: .codex, size: 28)
-                    Text("Codex 额度")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Theme.textMain)
-                    
-                    StatusCapsule(text: codexStatusText, color: codexStatusColor)
-                    
-                    Spacer()
-                    
-                    Text("数据源: \(quotaManager.dataSource)")
-                        .font(.system(size: 10))
-                        .foregroundColor(Theme.textSecondary)
-                }
+                AgentQuotaHeader(
+                    brand: .codex,
+                    title: "Codex 额度",
+                    statusText: codexStatusText,
+                    statusColor: codexStatusColor,
+                    primaryMeta: "数据源: \(quotaManager.dataSource)",
+                    secondaryMeta: "更新于 \(timeFormatter.string(from: quotaManager.lastUpdated))",
+                    refreshAction: { coordinator.refresh() }
+                )
                 
                 // Progress bars
                 VStack(spacing: 12) {
@@ -465,20 +441,20 @@ public struct SettingsView: View {
                 // Token Stats Grid
                 let summary = coordinator.usageData.tokenSummary
                 HStack(spacing: 12) {
-                    QuotaIndicatorCell(
+                    AgentMetricCell(
                         title: "5小时 Token",
                         value: formatTokens(summary.inputTokens5h + summary.outputTokens5h),
-                        subvalue: "输: \(formatTokens(summary.inputTokens5h)) | 出: \(formatTokens(summary.outputTokens5h))"
+                        subtitle: "输: \(formatTokens(summary.inputTokens5h)) | 出: \(formatTokens(summary.outputTokens5h))"
                     )
-                    QuotaIndicatorCell(
+                    AgentMetricCell(
                         title: "7天 Token",
                         value: formatTokens(summary.inputTokens7d + summary.outputTokens7d),
-                        subvalue: "输: \(formatTokens(summary.inputTokens7d)) | 出: \(formatTokens(summary.outputTokens7d))"
+                        subtitle: "输: \(formatTokens(summary.inputTokens7d)) | 出: \(formatTokens(summary.outputTokens7d))"
                     )
-                    QuotaIndicatorCell(
+                    AgentMetricCell(
                         title: "缓存命中 (5h / 7d)",
                         value: "\(calculateCacheHitRate(input: summary.inputTokens5h, cached: summary.cachedInputTokens5h)) / \(calculateCacheHitRate(input: summary.inputTokens7d, cached: summary.cachedInputTokens7d))",
-                        subvalue: "会话数: \(summary.sessionCount5h) / \(summary.sessionCount7d)"
+                        subtitle: "会话数: \(summary.sessionCount5h) / \(summary.sessionCount7d)"
                     )
                 }
                 
@@ -513,22 +489,34 @@ public struct SettingsView: View {
         CustomCard(title: "") {
             VStack(alignment: .leading, spacing: 16) {
                 // Header
-                HStack(spacing: 8) {
-                    AgentLogoView(brand: .claude, size: 28)
-                    Text("Claude Code 状态")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Theme.textMain)
-                    
-                    StatusCapsule(
-                        text: processMonitor.isClaudeRunning ? "● 运行中" : "● 已停止",
-                        color: processMonitor.isClaudeRunning ? Theme.green : Theme.textSecondary
+                AgentQuotaHeader(
+                    brand: .claude,
+                    title: "Claude Code 状态",
+                    statusText: processMonitor.isClaudeRunning ? "● 运行中" : "● 已停止",
+                    statusColor: processMonitor.isClaudeRunning ? Theme.green : Theme.textSecondary,
+                    primaryMeta: settings.claudeMonitorEnabled ? "监控已启用" : "监控已关闭",
+                    secondaryMeta: "进程监控"
+                )
+                
+                HStack(spacing: 12) {
+                    AgentMetricCell(
+                        title: "监控",
+                        value: settings.claudeMonitorEnabled ? "开启" : "关闭",
+                        subtitle: "运行监控",
+                        valueColor: settings.claudeMonitorEnabled ? Theme.green : Theme.textSecondary
                     )
-                    
-                    Spacer()
-                    
-                    Text(settings.claudeMonitorEnabled ? "监控已启用" : "监控已关闭")
-                        .font(.system(size: 10))
-                        .foregroundColor(settings.claudeMonitorEnabled ? Theme.green : Theme.textSecondary)
+                    AgentMetricCell(
+                        title: "进程",
+                        value: processMonitor.isClaudeRunning ? "运行中" : "未运行",
+                        subtitle: "实时检测",
+                        valueColor: processMonitor.isClaudeRunning ? Theme.green : Theme.textSecondary
+                    )
+                    AgentMetricCell(
+                        title: "Token",
+                        value: "未开放",
+                        subtitle: "无本地明细",
+                        valueColor: Theme.textSecondary
+                    )
                 }
                 
                 Divider().background(Theme.separator)
@@ -621,6 +609,96 @@ public struct SettingsView: View {
 
 // MARK: - Info Bullet Helper
 
+struct AgentQuotaHeader: View {
+    let brand: AgentBrand
+    let title: String
+    let statusText: String
+    let statusColor: Color
+    let primaryMeta: String
+    var secondaryMeta: String? = nil
+    var refreshAction: (() -> Void)? = nil
+    
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            AgentLogoView(brand: brand, size: 28)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(SettingsView.Theme.textMain)
+                    StatusCapsule(text: statusText, color: statusColor)
+                }
+                
+                Text(primaryMeta)
+                    .font(.system(size: 9))
+                    .foregroundColor(SettingsView.Theme.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            
+            Spacer()
+            
+            if let secondaryMeta {
+                HStack(spacing: 5) {
+                    if let refreshAction {
+                        Button(action: refreshAction) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundColor(SettingsView.Theme.textSecondary)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    
+                    Text(secondaryMeta)
+                        .font(.system(size: 9))
+                        .foregroundColor(SettingsView.Theme.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+}
+
+struct AgentMetricCell: View {
+    let title: String
+    let value: String
+    var subtitle: String? = nil
+    var valueColor: Color = SettingsView.Theme.textMain
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(SettingsView.Theme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            
+            Text(value)
+                .font(.system(size: 13, weight: .bold).monospacedDigit())
+                .foregroundColor(valueColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            
+            if let subtitle {
+                Text(subtitle)
+                    .font(.system(size: 8))
+                    .foregroundColor(SettingsView.Theme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .background(SettingsView.Theme.background.opacity(0.3))
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(SettingsView.Theme.separator, lineWidth: 1)
+        )
+    }
+}
+
 struct InfoBullet: View {
     let text: String
     var body: some View {
@@ -661,15 +739,15 @@ extension SettingsView {
     
     var geminiStatusText: String {
         if quotaManager.geminiMixedOfficialAndLocal {
-            return "⚠ 混合"
+            return "混合"
         } else if quotaManager.geminiIsExhausted || quotaManager.gemini24hIsExhausted {
-            return "⚠ 已限流"
+            return "已限流"
         } else if quotaManager.gemini5hUsesOfficialSnapshot || quotaManager.geminiLongUsesOfficialSnapshot {
-            return "● 官方"
+            return "官方"
         } else if coordinator.usageData.antigravityStats.calls7d == 0 {
-            return "⚠ 未采集"
+            return "未采集"
         } else {
-            return "● 本地"
+            return "本地"
         }
     }
     
@@ -757,13 +835,18 @@ struct QuotaRowView: View {
     let remaining: Int
     let resetText: String
     let isWarning: Bool
+    var labelWidth: CGFloat = 42
+    var infoWidth: CGFloat = 105
+    var resetWidth: CGFloat = 80
     
     var body: some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(SettingsView.Theme.textSecondary)
-                .frame(width: 42, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(width: labelWidth, alignment: .leading)
             
             // Progress Bar
             GeometryReader { geo in
@@ -784,13 +867,16 @@ struct QuotaRowView: View {
             Text("已用 \(used)% | 剩 \(remaining)%")
                 .font(.system(size: 10, weight: .semibold).monospacedDigit())
                 .foregroundColor(isWarning ? SettingsView.Theme.red : SettingsView.Theme.green)
-                .frame(width: 105, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .frame(width: infoWidth, alignment: .trailing)
             
             Text(resetText)
-                .font(.system(size: 10))
+                .font(.system(size: 10).monospacedDigit())
                 .foregroundColor(SettingsView.Theme.textSecondary)
-                .frame(width: 80, alignment: .trailing)
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(width: resetWidth, alignment: .trailing)
         }
     }
 }
@@ -803,26 +889,7 @@ struct QuotaIndicatorCell: View {
     let subvalue: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(SettingsView.Theme.textSecondary)
-            Text(value)
-                .font(.system(size: 12, weight: .bold).monospacedDigit())
-                .foregroundColor(SettingsView.Theme.textMain)
-            Text(subvalue)
-                .font(.system(size: 8))
-                .foregroundColor(SettingsView.Theme.textSecondary)
-                .lineLimit(1)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(SettingsView.Theme.background.opacity(0.3))
-        .cornerRadius(6)
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(SettingsView.Theme.separator, lineWidth: 1)
-        )
+        AgentMetricCell(title: title, value: value, subtitle: subvalue)
     }
 }
 
@@ -833,19 +900,7 @@ struct StatMiniCell: View {
     var valueColor: Color = SettingsView.Theme.textMain
     
     var body: some View {
-        VStack(alignment: .center, spacing: 3) {
-            Text(value)
-                .font(.system(size: 13, weight: .bold).monospacedDigit())
-                .foregroundColor(valueColor)
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundColor(SettingsView.Theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(SettingsView.Theme.background.opacity(0.3))
-        .cornerRadius(6)
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(SettingsView.Theme.separator, lineWidth: 1))
+        AgentMetricCell(title: label, value: value, valueColor: valueColor)
     }
 }
 
@@ -865,7 +920,7 @@ struct AntigravityQuotaGroupsSettingsView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(SettingsView.Theme.textSecondary)
                 Text("模型与额度")
-                    .font(.system(size: 13, weight: .bold).monospaced())
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(SettingsView.Theme.textMain)
                 Spacer()
             }
@@ -876,7 +931,7 @@ struct AntigravityQuotaGroupsSettingsView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(SettingsView.Theme.textMain)
                     Text(accountLabel)
-                        .font(.system(size: 12, weight: .semibold).monospaced())
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(SettingsView.Theme.accent)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -891,7 +946,7 @@ struct AntigravityQuotaGroupsSettingsView: View {
                 Text("同一组内的模型共享每周额度和 5 小时额度。")
                 Text("额度按 Token 成本比例消耗，成本更低的模型可用时间更长。")
             }
-            .font(.system(size: 11).monospaced())
+            .font(.system(size: 11))
             .foregroundColor(SettingsView.Theme.textSecondary)
             .padding(.leading, 8)
             .overlay(alignment: .leading) {
@@ -913,12 +968,12 @@ struct AntigravityQuotaSettingsGroupCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(group.title.uppercased())
-                .font(.system(size: 13, weight: .bold).monospaced())
+                .font(.system(size: 13, weight: .bold))
                 .foregroundColor(SettingsView.Theme.textMain)
             
             if !group.description.isEmpty {
                 Text(group.description)
-                    .font(.system(size: 12).monospaced())
+                    .font(.system(size: 12))
                     .foregroundColor(Color(hex: "#8FBFC1"))
                     .lineLimit(2)
             }
@@ -934,48 +989,17 @@ struct AntigravityQuotaSettingsGroupCard: View {
 struct AntigravityQuotaSettingsBucketRow: View {
     let bucket: AntigravityQuotaDisplayBucket
     
-    private var color: Color {
-        if bucket.remainingFraction <= 0.1 { return SettingsView.Theme.red }
-        if bucket.remainingFraction <= 0.25 { return SettingsView.Theme.yellow }
-        return SettingsView.Theme.green
-    }
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(bucket.title)
-                    .font(.system(size: 12, weight: .bold).monospaced())
-                    .foregroundColor(SettingsView.Theme.textMain)
-                Spacer()
-                Text(String(format: "%.2f", bucket.remainingPercent))
-                    .font(.system(size: 12, weight: .medium).monospacedDigit())
-                    .foregroundColor(Color(hex: "#8FBFC1"))
-            }
-            
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "#8FBFC1").opacity(0.22))
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color)
-                        .frame(width: geo.size.width * bucket.remainingFraction)
-                        .animation(.easeInOut(duration: 0.25), value: bucket.remainingFraction)
-                }
-            }
-            .frame(height: 6)
-            
-            HStack(spacing: 5) {
-                Text("剩余 \(bucket.remainingWholePercent)%")
-                    .font(.system(size: 12, weight: .medium).monospacedDigit())
-                    .foregroundColor(color)
-                Text("·")
-                    .font(.system(size: 12))
-                    .foregroundColor(SettingsView.Theme.textSecondary)
-                Text("\(formatRemaining(until: bucket.resetTime)) 后刷新")
-                    .font(.system(size: 12).monospacedDigit())
-                    .foregroundColor(color)
-            }
-        }
+        QuotaRowView(
+            label: bucket.title,
+            used: max(0, min(100, 100 - bucket.remainingWholePercent)),
+            remaining: bucket.remainingWholePercent,
+            resetText: "\(formatRemaining(until: bucket.resetTime))后",
+            isWarning: bucket.remainingWholePercent <= 25,
+            labelWidth: 68,
+            infoWidth: 105,
+            resetWidth: 92
+        )
         .padding(.leading, 26)
     }
     
