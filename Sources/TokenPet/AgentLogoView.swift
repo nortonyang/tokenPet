@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Agent Brand
 
-public enum AgentBrand { case gemini, codex, claude }
+public enum AgentBrand { case antigravity, codex, claude }
 
 // MARK: - Agent Logo Container
 
@@ -26,9 +26,9 @@ public struct AgentLogoView: View {
 
     private var bgFill: LinearGradient {
         switch brand {
-        case .gemini:
+        case .antigravity:
             return LinearGradient(
-                colors: [Color(hex: "#4285F4").opacity(0.20), Color(hex: "#8AB4F8").opacity(0.08)],
+                colors: [Color(hex: "#8A7CFF").opacity(0.24), Color(hex: "#30D158").opacity(0.10)],
                 startPoint: .topLeading, endPoint: .bottomTrailing)
         case .codex:
             return LinearGradient(
@@ -43,7 +43,7 @@ public struct AgentLogoView: View {
 
     private var strokeColor: Color {
         switch brand {
-        case .gemini: return Color(hex: "#4285F4").opacity(0.35)
+        case .antigravity: return Color(hex: "#8A7CFF").opacity(0.38)
         case .codex:  return Color(NSColor.labelColor).opacity(0.20)
         case .claude: return Color(hex: "#DA7756").opacity(0.38)
         }
@@ -54,60 +54,35 @@ public struct AgentLogoView: View {
     @ViewBuilder
     private var mark: some View {
         switch brand {
-        case .gemini: GeminiSparkle()
+        case .antigravity: AntigravityMonogram()
         case .codex:  OpenAIBloom()
         case .claude: AnthropicSunrise()
         }
     }
 }
 
-// MARK: - Google Gemini — 4-pointed sparkle (lens/vesica cross)
+// MARK: - Antigravity — agent monogram
 
-/// The Gemini logo is two overlapping "eye" shapes crossing at 90°, forming a
-/// smooth 4-pointed star. Drawn with Bezier curves so the arms taper gracefully.
-struct GeminiSparkle: View {
+struct AntigravityMonogram: View {
     var body: some View {
-        Canvas { ctx, size in
-            let cx = size.width  / 2
-            let cy = size.height / 2
-            let r  = min(size.width, size.height) / 2
-            let b  = r * 0.20   // control-point inset (bulge width)
-
-            // ── Vertical arm (N → S, blue gradient) ──
-            var vPath = Path()
-            vPath.move(to: CGPoint(x: cx, y: cy - r))
-            vPath.addCurve(
-                to: CGPoint(x: cx, y: cy + r),
-                control1: CGPoint(x: cx + b, y: cy - b),
-                control2: CGPoint(x: cx + b, y: cy + b))
-            vPath.addCurve(
-                to: CGPoint(x: cx, y: cy - r),
-                control1: CGPoint(x: cx - b, y: cy + b),
-                control2: CGPoint(x: cx - b, y: cy - b))
-            vPath.closeSubpath()
-
-            ctx.fill(vPath, with: .linearGradient(
-                Gradient(colors: [Color(hex: "#5AA0F0"), Color(hex: "#4285F4")]),
-                startPoint: CGPoint(x: cx, y: cy - r),
-                endPoint:   CGPoint(x: cx, y: cy + r)))
-
-            // ── Horizontal arm (W → E, lighter blue) ──
-            var hPath = Path()
-            hPath.move(to: CGPoint(x: cx - r, y: cy))
-            hPath.addCurve(
-                to: CGPoint(x: cx + r, y: cy),
-                control1: CGPoint(x: cx - b, y: cy - b),
-                control2: CGPoint(x: cx + b, y: cy - b))
-            hPath.addCurve(
-                to: CGPoint(x: cx - r, y: cy),
-                control1: CGPoint(x: cx + b, y: cy + b),
-                control2: CGPoint(x: cx - b, y: cy + b))
-            hPath.closeSubpath()
-
-            ctx.fill(hPath, with: .linearGradient(
-                Gradient(colors: [Color(hex: "#8AB4F8"), Color(hex: "#4285F4")]),
-                startPoint: CGPoint(x: cx - r, y: cy),
-                endPoint:   CGPoint(x: cx + r, y: cy)))
+        GeometryReader { geo in
+            let size = min(geo.size.width, geo.size.height)
+            ZStack {
+                Text("A")
+                    .font(.system(size: size * 0.82, weight: .black, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(hex: "#8A7CFF"), Color(hex: "#30D158")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Image(systemName: "arrow.up")
+                    .font(.system(size: size * 0.22, weight: .heavy))
+                    .foregroundColor(Color(hex: "#30D158"))
+                    .offset(x: size * 0.23, y: -size * 0.25)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }

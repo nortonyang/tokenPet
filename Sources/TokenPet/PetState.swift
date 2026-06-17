@@ -70,7 +70,7 @@ public enum PetVisualState: String {
             currentState = .working
             
             var runningTools: [String] = []
-            if isGeminiRunning { runningTools.append("Gemini") }
+            if isGeminiRunning { runningTools.append("反重力") }
             if isCodexRunning { runningTools.append("Codex") }
             if isClaudeRunning { runningTools.append("Claude") }
             

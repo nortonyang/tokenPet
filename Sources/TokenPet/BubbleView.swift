@@ -43,7 +43,7 @@ public struct BubbleView: View {
                 Spacer()
                 // Tool logos — 用 AgentLogoView 替代字母圆点
                 HStack(spacing: 5) {
-                    AgentToolIcon(brand: .gemini, isRunning: processMonitor.isGeminiRunning, isEnabled: settings.geminiMonitorEnabled)
+                    AgentToolIcon(brand: .antigravity, isRunning: processMonitor.isGeminiRunning, isEnabled: settings.geminiMonitorEnabled)
                     AgentToolIcon(brand: .codex,  isRunning: processMonitor.isCodexRunning,  isEnabled: settings.codexMonitorEnabled)
                     AgentToolIcon(brand: .claude, isRunning: processMonitor.isClaudeRunning, isEnabled: settings.claudeMonitorEnabled)
                 }
@@ -91,9 +91,6 @@ public struct BubbleView: View {
                                 resetLabel: quotaManager.timeRemaining7d(),
                                 color: quotaManager.is7dWarning ? .red : .green
                             )
-                            
-                            CodexTokenGrid(tokens: coordinator.usageData.tokenSummary)
-                                .padding(.top, 2)
                         }
                         .padding(.horizontal, 2)
                     }
@@ -107,7 +104,6 @@ public struct BubbleView: View {
                     if settings.geminiMonitorEnabled {
                         VStack(spacing: 8) {
                             let antigravityStats = coordinator.usageData.antigravityStats
-                            let hasAntigravityTokens = antigravityStats.tokenSummary.totalTokens7d > 0
                             let hasAntigravityOfficialQuota = coordinator.usageData.geminiOfficialQuotas.contains { $0.sourceTool == "antigravity-cli" }
                             let antigravityQuotaGroups = AntigravityQuotaDisplayBuilder.groups(from: coordinator.usageData.geminiOfficialQuotas)
                             
@@ -136,7 +132,7 @@ public struct BubbleView: View {
                             }()
                             
                             BubbleSectionHeader(
-                                brand: .gemini,
+                                brand: .antigravity,
                                 title: "反重力",
                                 statusText: geminiStatusText,
                                 statusColor: geminiStatusColor,
@@ -163,22 +159,6 @@ public struct BubbleView: View {
                                         AntigravityQuotaGroupsCompactView(groups: antigravityQuotaGroups)
                                             .padding(.top, 2)
                                     } else {
-                                        if !hasAntigravityTokens {
-                                            VStack(alignment: .leading, spacing: 5) {
-                                                Text("尚未采集到反重力 /usage summary")
-                                                    .font(.system(size: 9))
-                                                    .foregroundColor(.orange)
-                                                Text("当前仅显示反重力本地调用和 429。")
-                                                    .font(.system(size: 8))
-                                                    .foregroundColor(.orange)
-                                                    .fixedSize(horizontal: false, vertical: true)
-                                            }
-                                            .padding(6)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(Color.orange.opacity(0.1))
-                                            .cornerRadius(4)
-                                        }
-                                        
                                         let limit5h = antigravityStats.inferredLimit5h ?? 300
                                         let limit24h = antigravityStats.inferredLimit24h ?? 1000
                                         let resetLabel5h = quotaManager.geminiIsExhausted || quotaManager.gemini5hUsesOfficialSnapshot ? quotaManager.geminiResetsRemaining : "\(antigravityStats.calls5h)/\(limit5h)次"
@@ -200,28 +180,10 @@ public struct BubbleView: View {
                                             color: quotaManager.gemini24hIsExhausted ? .red : .blue
                                         )
                                     }
-                                    
-                                    if !antigravityQuotaGroups.isEmpty {
-                                        HStack {
-                                            Text("本地累计调用")
-                                                .font(.system(size: 9))
-                                                .foregroundColor(.secondary)
-                                            Spacer()
-                                            Text("\(antigravityStats.calls7d) 次")
-                                                .font(.system(size: 10, weight: .bold).monospacedDigit())
-                                                .foregroundColor(.secondary)
-                                        }
-                                        .padding(.top, 2)
-                                    }
-                                    
-                                    if hasAntigravityTokens {
-                                        GeminiTokenGrid(tokens: antigravityStats.tokenSummary)
-                                            .padding(.top, 4)
-                                    }
                                 }
                             }
-                            
-                            Text(geminiDataSourceLabel(hasTelemetryTokens: hasAntigravityTokens, hasSummary: !antigravityQuotaGroups.isEmpty))
+
+                            Text(geminiDataSourceLabel(hasSummary: !antigravityQuotaGroups.isEmpty))
                                 .font(.system(size: 8))
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -286,25 +248,9 @@ public struct BubbleView: View {
         }
     }
     
-    private func formatTokens(_ count: Int) -> String {
-        if count >= 1_000_000 {
-            return String(format: "%.1fM", Double(count) / 1_000_000.0)
-        } else if count >= 1_000 {
-            return String(format: "%.1fK", Double(count) / 1_000.0)
-        }
-        return "\(count)"
-    }
-    
-    private func geminiDataSourceLabel(hasTelemetryTokens: Bool, hasSummary: Bool) -> String {
-        let tokenSuffix: String
-        if hasTelemetryTokens {
-            tokenSuffix = "/usage Token 已采集"
-        } else if hasSummary {
-            tokenSuffix = "/usage 摘要已采集"
-        } else {
-            tokenSuffix = "/usage 摘要未采集"
-        }
-        return "数据源: \(quotaManager.geminiDataSource) | \(tokenSuffix)"
+    private func geminiDataSourceLabel(hasSummary: Bool) -> String {
+        let summaryText = hasSummary ? "/usage 摘要已采集" : "/usage 摘要未采集"
+        return "数据源: \(quotaManager.geminiDataSource) | \(summaryText)"
     }
 }
 
@@ -378,7 +324,7 @@ struct AntigravityQuotaCompactGroupView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(group.title.uppercased())
-                .font(.system(size: 9, weight: .semibold).monospaced())
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(.secondary)
             if !group.description.isEmpty {
                 Text(group.description)
@@ -714,7 +660,7 @@ struct AgentToolIcon: View {
 
     private var brandColor: Color {
         switch brand {
-        case .gemini: return Color(hex: "#4285F4")
+        case .antigravity: return Color(hex: "#8A7CFF")
         case .codex:  return Color(NSColor.labelColor)
         case .claude: return Color(hex: "#DA7756")
         }
@@ -722,7 +668,7 @@ struct AgentToolIcon: View {
 
     private var toolName: String {
         switch brand {
-        case .gemini: return "反重力"
+        case .antigravity: return "反重力"
         case .codex:  return "Codex"
         case .claude: return "Claude"
         }
