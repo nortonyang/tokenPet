@@ -34,6 +34,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCen
         // Start process monitoring
         ProcessMonitor.shared.startMonitoring()
         
+        // Start action hook file watcher
+        _ = HookMonitor.shared
+        
         // Trigger initial log parse to populate quota values
         quotaManager.forceRefresh()
     }

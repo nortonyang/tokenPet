@@ -168,6 +168,47 @@ open TokenPet.app
 
 应用以后台 Agent 形式运行，不显示 Dock 图标。启动后请在桌面宠物或菜单栏入口中操作。
 
+## ⚓️ 命令行动作钩子 (Shell Hooks)
+
+为了消除进程轮询产生的秒级延迟，并避免短命令执行时间太短而被轮询漏掉，TokenPet 提供了**动作钩子文件**支持：
+
+应用启动后会自动在 `~/.tokenpet/status` 创建监控文件。你可以通过向此文件写入状态来**毫秒级地**控制宠物的动作：
+
+- 触发打字（以反重力为例）：`echo "working:antigravity" > ~/.tokenpet/status`
+- 触发打字（以 Codex 为例）：`echo "working:codex" > ~/.tokenpet/status`
+- 触发打字（以 Claude 为例）：`echo "working:claude" > ~/.tokenpet/status`
+- 触发结束（旋转跳跃并回到空闲）：`echo "idle" > ~/.tokenpet/status`
+
+### 🐚 终端 Shell 完美集成联动 (zsh 示例)
+
+你可以将以下逻辑添加到你的 `~/.zshrc` 配置文件中。这样只要在终端执行 AI 相关的命令行工具，桌面宠物就会**立刻开始敲键盘**；命令执行结束后**立刻庆祝并停下**，体验极其丝滑：
+
+```zsh
+# ~/.zshrc 中添加 TokenPet 动作钩子联动
+function tokenpet_preexec() {
+    local cmd="$1"
+    # 匹配以 antigravity, gemini, claude, codex 开头的命令
+    if [[ "$cmd" =~ "^(antigravity|gemini|claude|codex)" ]]; then
+        # 提取命令的主名作为参数写入钩子文件
+        local tool="${cmd%% *}"
+        if [[ "$tool" == "gemini" ]]; then tool="antigravity"; fi
+        echo "working:$tool" > ~/.tokenpet/status
+    fi
+}
+
+function tokenpet_precmd() {
+    # 命令执行完毕回到 prompt 时，向钩子文件发送 idle 状态
+    echo "idle" > ~/.tokenpet/status
+}
+
+# 挂载到 zsh 的钩子函数列表中
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec tokenpet_preexec
+add-zsh-hook precmd tokenpet_precmd
+```
+
+*(注：钩子包含 30 秒超时防卡死机制。如果因为意外 shell 没能发送 idle 指令，宠物在持续敲键盘 30 秒后会自动恢复空闲状态。)*
+
 ## 项目结构
 
 ```text

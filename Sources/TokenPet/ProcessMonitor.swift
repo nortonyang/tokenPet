@@ -9,6 +9,28 @@ import Combine
     @Published public var isClaudeRunning: Bool = false
     @Published public var hasMonitoringError: Bool = false
     
+    // Hook-triggered states
+    @Published public var isGeminiRunningFromHook: Bool = false {
+        didSet { updatePublishedStates() }
+    }
+    @Published public var isCodexRunningFromHook: Bool = false {
+        didSet { updatePublishedStates() }
+    }
+    @Published public var isClaudeRunningFromHook: Bool = false {
+        didSet { updatePublishedStates() }
+    }
+    
+    // PS-detected states
+    private var isGeminiRunningFromPS: Bool = false
+    private var isCodexRunningFromPS: Bool = false
+    private var isClaudeRunningFromPS: Bool = false
+    
+    private func updatePublishedStates() {
+        self.isGeminiRunning = isGeminiRunningFromPS || isGeminiRunningFromHook
+        self.isCodexRunning = isCodexRunningFromPS || isCodexRunningFromHook
+        self.isClaudeRunning = isClaudeRunningFromPS || isClaudeRunningFromHook
+    }
+    
     private var settings = SettingsManager.shared
     private var timer: AnyCancellable?
     private var isScanning = false
@@ -145,10 +167,11 @@ import Combine
             }
         }
         
-        self.isGeminiRunning = geminiDetected
-        self.isCodexRunning = codexDetected
-        self.isClaudeRunning = claudeDetected
+        self.isGeminiRunningFromPS = geminiDetected
+        self.isCodexRunningFromPS = codexDetected
+        self.isClaudeRunningFromPS = claudeDetected
         self.hasMonitoringError = false
+        updatePublishedStates()
         
         // Note: quota is now tracked automatically by UsageLogParser via log file scanning
     }
