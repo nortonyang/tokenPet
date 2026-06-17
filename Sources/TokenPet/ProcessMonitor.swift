@@ -103,7 +103,17 @@ import Combine
             let lowerLine = line.lowercased()
             
             // Skip the ps command itself to avoid self-detection
-            if lowerLine.contains("ps -ax -o command") || lowerLine.contains("tokenpet") {
+            if lowerLine.contains("ps -ax") || lowerLine.contains("tokenpet") {
+                continue
+            }
+            
+            // Skip known persistent background/daemon processes to avoid false positives
+            if lowerLine.contains("/applications/codex.app") ||
+               lowerLine.contains("gemini_bridge_server.py") ||
+               lowerLine.contains("bare-modifier-monitor") ||
+               lowerLine.contains("skycomputeruseservice") ||
+               lowerLine.contains("node_repl") ||
+               lowerLine.contains("crashpad_handler") {
                 continue
             }
             

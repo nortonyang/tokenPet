@@ -1,6 +1,14 @@
 import SwiftUI
 import Combine
 
+private enum PetActiveAgent: Equatable {
+    case none
+    case antigravity
+    case codex
+    case claude
+    case mixed
+}
+
 public struct PetView: View {
     @ObservedObject var stateManager = PetStateManager.shared
     @ObservedObject var settings = SettingsManager.shared
@@ -185,7 +193,28 @@ public struct PetView: View {
                 resetAndApplyAnimations(for: newState)
             }
         }
+        .onChange(of: activeAgent) { _, _ in
+            guard stateManager.currentState == .working else { return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                resetAndApplyAnimations(for: .working)
+            }
+        }
         .scaleEffect(settings.petSize)
+    }
+    
+    private var activeAgent: PetActiveAgent {
+        let activeCount = [
+            processMonitor.isGeminiRunning,
+            processMonitor.isCodexRunning,
+            processMonitor.isClaudeRunning
+        ].filter { $0 }.count
+        
+        if activeCount == 0 { return .none }
+        if activeCount > 1 { return .mixed }
+        if processMonitor.isGeminiRunning { return .antigravity }
+        if processMonitor.isCodexRunning { return .codex }
+        if processMonitor.isClaudeRunning { return .claude }
+        return .none
     }
     
     // Dynamic Colors based on states
@@ -193,14 +222,17 @@ public struct PetView: View {
         switch stateManager.currentState {
         case .idle: return Color(red: 0.9, green: 0.93, blue: 0.98) // Soft metallic white
         case .working:
-            if processMonitor.isGeminiRunning && !processMonitor.isCodexRunning && !processMonitor.isClaudeRunning {
-                return Color(red: 0.8, green: 0.88, blue: 1.0) // Gemini Light Blue
-            } else if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
-                return Color(red: 0.88, green: 0.82, blue: 0.98) // Codex Purple
-            } else if processMonitor.isClaudeRunning && !processMonitor.isGeminiRunning && !processMonitor.isCodexRunning {
-                return Color(red: 1.0, green: 0.88, blue: 0.8) // Claude Orange
-            } else {
-                return Color(red: 0.82, green: 0.95, blue: 0.92) // Mixed Teal
+            switch activeAgent {
+            case .antigravity:
+                return Color(red: 0.86, green: 0.82, blue: 1.0)
+            case .codex:
+                return Color(red: 0.88, green: 0.82, blue: 0.98)
+            case .claude:
+                return Color(red: 1.0, green: 0.88, blue: 0.8)
+            case .mixed:
+                return Color(red: 0.82, green: 0.95, blue: 0.92)
+            case .none:
+                return Color(red: 0.9, green: 0.93, blue: 0.98)
             }
         case .finished: return Color(red: 0.88, green: 0.97, blue: 0.9) // Soft mint green
         case .warning: return Color(red: 1.0, green: 0.94, blue: 0.82) // Soft yellow/orange
@@ -212,14 +244,17 @@ public struct PetView: View {
         switch stateManager.currentState {
         case .idle: return Color(red: 0.35, green: 0.65, blue: 1.0) // Cyan-blue
         case .working:
-            if processMonitor.isGeminiRunning && !processMonitor.isCodexRunning && !processMonitor.isClaudeRunning {
-                return Color(red: 0.0, green: 0.5, blue: 1.0) // Gemini Blue
-            } else if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
-                return Color(red: 0.6, green: 0.3, blue: 0.9) // Codex Purple
-            } else if processMonitor.isClaudeRunning && !processMonitor.isGeminiRunning && !processMonitor.isCodexRunning {
-                return Color(red: 1.0, green: 0.45, blue: 0.1) // Claude Orange
-            } else {
-                return Color(red: 0.0, green: 0.7, blue: 0.6) // Mixed Cyan/Teal
+            switch activeAgent {
+            case .antigravity:
+                return Color(hex: "#8A7CFF")
+            case .codex:
+                return Color(red: 0.6, green: 0.3, blue: 0.9)
+            case .claude:
+                return Color(red: 1.0, green: 0.45, blue: 0.1)
+            case .mixed:
+                return Color(red: 0.0, green: 0.7, blue: 0.6)
+            case .none:
+                return Color(red: 0.35, green: 0.65, blue: 1.0)
             }
         case .finished: return Color(red: 0.15, green: 0.75, blue: 0.3) // Bright green
         case .warning: return Color(red: 1.0, green: 0.53, blue: 0.0) // Vivid orange
@@ -231,14 +266,12 @@ public struct PetView: View {
         switch stateManager.currentState {
         case .idle: return Color.green
         case .working:
-            if processMonitor.isGeminiRunning && !processMonitor.isCodexRunning && !processMonitor.isClaudeRunning {
-                return Color.blue
-            } else if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
-                return Color.purple
-            } else if processMonitor.isClaudeRunning && !processMonitor.isGeminiRunning && !processMonitor.isCodexRunning {
-                return Color.orange
-            } else {
-                return Color.teal
+            switch activeAgent {
+            case .antigravity: return Color(hex: "#8A7CFF")
+            case .codex: return Color.purple
+            case .claude: return Color.orange
+            case .mixed: return Color.teal
+            case .none: return Color.green
             }
         case .finished: return Color.green
         case .warning: return Color.orange
@@ -317,16 +350,15 @@ public struct PetView: View {
         switch state {
         case .working:
             // Continuous rapid typing hands animation speed customized by tool
-            let speed: Double
-            if processMonitor.isGeminiRunning && !processMonitor.isCodexRunning && !processMonitor.isClaudeRunning {
-                speed = 0.12 // Gemini rapid typing
-            } else if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
-                speed = 0.16 // Codex steady typing
-            } else if processMonitor.isClaudeRunning && !processMonitor.isGeminiRunning && !processMonitor.isCodexRunning {
-                speed = 0.08 // Claude extremely fast typing
-            } else {
-                speed = 0.10 // Mixed/others moderate typing
-            }
+            let speed: Double = {
+                switch activeAgent {
+                case .antigravity: return 0.12
+                case .codex: return 0.16
+                case .claude: return 0.08
+                case .mixed: return 0.10
+                case .none: return 0.14
+                }
+            }()
             
             withAnimation(Animation.linear(duration: speed).repeatForever(autoreverses: true)) {
                 typingOffsetL = -6
@@ -380,9 +412,9 @@ struct EyeView: View {
     
     private var activeLetters: [String] {
         var letters: [String] = []
-        if processMonitor.isGeminiRunning { letters.append("G") }
+        if processMonitor.isGeminiRunning { letters.append("A") }
         if processMonitor.isCodexRunning { letters.append("C") }
-        if processMonitor.isClaudeRunning { letters.append("A") }
+        if processMonitor.isClaudeRunning { letters.append("L") }
         return letters
     }
     
@@ -525,7 +557,11 @@ struct MiniLaptopView: View {
             .overlay(
                 // Coding lines representation inside the laptop screen
                 VStack(alignment: .leading, spacing: 3) {
-                    if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
+                    if processMonitor.isGeminiRunning && !processMonitor.isCodexRunning && !processMonitor.isClaudeRunning {
+                        RoundedRectangle(cornerRadius: 1).fill(Color(hex: "#8A7CFF")).frame(width: 28, height: 2)
+                        RoundedRectangle(cornerRadius: 1).fill(Color(hex: "#30D158")).frame(width: 20, height: 2)
+                        RoundedRectangle(cornerRadius: 1).fill(Color.cyan).frame(width: 32, height: 2)
+                    } else if processMonitor.isCodexRunning && !processMonitor.isGeminiRunning && !processMonitor.isClaudeRunning {
                         // Codex purple-themed coding lines
                         RoundedRectangle(cornerRadius: 1).fill(Color.purple).frame(width: 25, height: 2)
                         RoundedRectangle(cornerRadius: 1).fill(Color(red: 0.9, green: 0.5, blue: 0.9)).frame(width: 32, height: 2)
@@ -536,7 +572,7 @@ struct MiniLaptopView: View {
                         RoundedRectangle(cornerRadius: 1).fill(Color.yellow).frame(width: 20, height: 2)
                         RoundedRectangle(cornerRadius: 1).fill(Color(red: 0.9, green: 0.6, blue: 0.4)).frame(width: 25, height: 2)
                     } else {
-                        // Gemini/Default cyan/blue coding lines
+                        // Mixed/default coding lines
                         RoundedRectangle(cornerRadius: 1).fill(Color.cyan).frame(width: 25, height: 2)
                         RoundedRectangle(cornerRadius: 1).fill(Color.blue).frame(width: 32, height: 2)
                         RoundedRectangle(cornerRadius: 1).fill(Color.purple).frame(width: 18, height: 2)
